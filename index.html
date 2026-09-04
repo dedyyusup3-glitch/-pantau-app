@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PANTAU">
+<meta name="theme-color" content="#14171A">
+<title>PANTAU — Pelaporan Temuan Lapangan</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-mark">P</div>
+  <div class="login-title">PANTAU</div>
+  <div class="login-sub">Masuk dengan NIK &amp; Nama sesuai data karyawan untuk mulai melapor temuan lapangan.</div>
+
+  <div class="field-block">
+    <label for="loginNik">NIK</label>
+    <input type="text" id="loginNik" placeholder="Contoh: 30021458" inputmode="numeric">
+  </div>
+  <div class="field-block">
+    <label for="loginNama">Nama Lengkap</label>
+    <input type="text" id="loginNama" placeholder="Sesuai data karyawan">
+  </div>
+  <div class="error-msg" id="loginError">NIK atau Nama tidak cocok dengan data karyawan. Periksa kembali.</div>
+  <button class="btn-primary" id="btnLoginKaryawan">Masuk</button>
+
+  <div class="hint">Login tersimpan selama aplikasi aktif. Jika ditutup lebih dari 3 menit, login ulang diperlukan untuk keamanan.</div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="app" class="hidden">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <div class="brand-name">PANTAU</div>
+        <div class="brand-sub">Pelaporan Temuan Lapangan</div>
+      </div>
+    </div>
+    <div class="user-chip">
+      <span id="userLabel">-</span>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </header>
+
+  <div id="loadingBar" class="loading-bar hidden"></div>
+
+  <main>
+
+    <!-- ---- VIEW: INPUT FORM ---- -->
+    <section id="viewInput">
+      <div class="section-title">Input Temuan</div>
+      <div class="section-sub">Isi detail temuan hasil inspeksi lapangan.</div>
+
+      <div class="card">
+        <div class="card-head">Data Pelapor</div>
+        <div class="field-block">
+          <label>Nama</label>
+          <input type="text" id="fDibuatOleh" placeholder="Otomatis dari akun login" readonly>
+        </div>
+        <div class="field-block">
+          <label>NIK</label>
+          <input type="text" id="fNik" placeholder="Otomatis dari akun login" readonly>
+        </div>
+        <div class="row-2">
+          <div class="field-block">
+            <label>Jabatan</label>
+            <input type="text" id="fJabatan" placeholder="Contoh: Operator, Safety Officer">
+          </div>
+          <div class="field-block">
+            <label>Departemen</label>
+            <input type="text" id="fDepartemen" placeholder="Contoh: Mining, Plant, HSE">
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="field-block">
+            <label>Tanggal</label>
+            <input type="date" id="fTanggal">
+          </div>
+          <div class="field-block">
+            <label>Lokasi</label>
+            <input type="text" id="fLokasi" placeholder="Contoh: Workshop, Pit A">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Temuan KTA/TTA</div>
+        <div class="field-block">
+          <label>Penjelasan Temuan</label>
+          <textarea id="fTemuan" placeholder="Deskripsikan kondisi tidak aman / tindakan tidak aman yang ditemukan"></textarea>
+        </div>
+        <div class="field-block">
+          <label>Foto Temuan (opsional)</label>
+          <input type="file" id="fFoto" accept="image/*" capture="environment">
+          <img id="fFotoPreview" class="hidden mt-16" style="width:100%;border-radius:4px;border:1px solid var(--border);">
+        </div>
+        <div class="field-block">
+          <label>Kode Bahaya</label>
+          <div class="sev-picker">
+            <button type="button" class="sev-btn" data-sev="AA">AA<small>Extreme</small></button>
+            <button type="button" class="sev-btn" data-sev="A">A<small>High</small></button>
+            <button type="button" class="sev-btn" data-sev="B">B<small>Moderate</small></button>
+            <button type="button" class="sev-btn" data-sev="C">C<small>Low</small></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Tindakan Perbaikan</div>
+        <div class="field-block">
+          <label>Hasil Perbaikan</label>
+          <textarea id="fTindakan" placeholder="Jelaskan tindakan perbaikan yang sudah/akan dilakukan"></textarea>
+        </div>
+        <div class="field-block">
+          <label>Foto Hasil Perbaikan (opsional)</label>
+          <input type="file" id="fFotoTindakan" accept="image/*" capture="environment">
+          <img id="fFotoTindakanPreview" class="hidden mt-16" style="width:100%;border-radius:4px;border:1px solid var(--border);">
+        </div>
+        <div class="field-block">
+          <label>Status</label>
+          <select id="fStatus">
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Tambahan (opsional, di luar form asli — untuk tracking)</div>
+        <div class="row-2">
+          <div class="field-block">
+            <label>PIC Penanggung Jawab</label>
+            <input type="text" id="fPic" placeholder="Nama PIC">
+          </div>
+          <div class="field-block">
+            <label>Due Date</label>
+            <input type="date" id="fDueDate">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btnSimpanTemuan">Simpan Temuan</button>
+      <button class="btn-secondary hidden" id="btnBatalEdit">Batal Edit</button>
+    </section>
+
+    <!-- ---- VIEW: RIWAYAT ---- -->
+    <section id="viewRiwayat" class="hidden">
+      <div class="section-title">Riwayat Temuan</div>
+      <div class="section-sub">Semua temuan yang tersimpan di database.</div>
+      <div class="field-block" style="margin-bottom:16px;">
+        <select id="fFilterStatus">
+          <option value="">Semua Status</option>
+          <option value="open">Open</option>
+          <option value="closed">Sudah Close</option>
+        </select>
+      </div>
+      <div id="riwayatList"></div>
+      <div id="riwayatEmpty" class="empty-state hidden">
+        <div class="ic">📋</div>
+        Belum ada temuan tersimpan.
+      </div>
+    </section>
+
+    <!-- ---- VIEW: DASHBOARD ---- -->
+    <section id="viewDashboard" class="hidden">
+      <div class="section-title">Dashboard Analitik</div>
+      <div class="section-sub">Ringkasan seluruh temuan yang tercatat.</div>
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="num" id="statTotal">0</div><div class="lbl">Total Temuan</div></div>
+        <div class="stat-box"><div class="num" id="statOpen">0</div><div class="lbl">Status Open</div></div>
+        <div class="stat-box"><div class="num" id="statClosed">0</div><div class="lbl">Sudah Close</div></div>
+        <div class="stat-box"><div class="num" id="statTerlambat">0</div><div class="lbl">Terlambat</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Distribusi Kategori Risiko (AA/A/B/C)</div>
+        <canvas id="chartSeverity" height="180"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-head">Temuan per Lokasi (Top 8)</div>
+        <canvas id="chartLokasi" height="200"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-head">Temuan per Departemen</div>
+        <canvas id="chartDept" height="200"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-head">Beban Temuan per PIC</div>
+        <canvas id="chartPic" height="200"></canvas>
+      </div>
+
+      <button class="btn-primary" id="btnExportExcel">Export ke Excel (.xlsx)</button>
+    </section>
+
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab-btn active" data-tab="viewInput"><span class="ic">📝</span>Input</button>
+    <button class="tab-btn" data-tab="viewRiwayat"><span class="ic">🗂️</span>Riwayat</button>
+    <button class="tab-btn" data-tab="viewDashboard"><span class="ic">📊</span>Dashboard</button>
+  </nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
