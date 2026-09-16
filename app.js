@@ -1,3 +1,33 @@
+// === Notifikasi Telegram ===
+const TELEGRAM_BOT_TOKEN = "8924473449:AAGh2hTBVq7F29y_u1z67kD3BzQB4VYyOUA";
+const TELEGRAM_CHAT_ID = "-5357420061";
+
+async function kirimNotifTelegram(data) {
+  const severityLabel = { AA: "Extreme", A: "High", B: "Moderate", C: "Low" };
+  const teks =
+    `🚨 *Temuan Baru - PANTAU*\n\n` +
+    `📍 Lokasi: ${data.lokasi}\n` +
+    `⚠️ Kode Bahaya: ${data.severity} (${severityLabel[data.severity] || "-"})\n` +
+    `📝 Temuan: ${data.temuan}\n` +
+    `👤 Pelapor: ${data.dibuatOleh || "-"}\n` +
+    `🏢 Departemen: ${data.departemen || "-"}\n` +
+    `📌 Status: ${data.status || "Open"}`;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: teks,
+        parse_mode: "Markdown"
+      })
+    });
+  } catch (e) {
+    console.error("Gagal kirim notifikasi Telegram:", e);
+  }
+}
+
 // =====================================================================
 // PANTAU — app.js (versi Google Sheets + Apps Script)
 // =====================================================================
@@ -196,6 +226,7 @@ document.getElementById("btnSimpanTemuan").addEventListener("click", async () =>
       await callApi("updateTemuan", { id: editingId, data });
     } else {
       await callApi("addTemuan", { data });
+      kirimNotifTelegram(data);
     }
     resetForm();
     await refreshTemuan();
