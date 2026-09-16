@@ -28,6 +28,69 @@ async function kirimNotifTelegram(data) {
   }
 }
 
+
+// === Mode Offline: antrian temuan yang belum terkirim ===
+const PENDING_KEY = "pantau_pending";
+
+function getPending() {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY) || "[]");
+  } catch { return []; }
+}
+
+function setPending(arr) {
+  localStorage.setItem(PENDING_KEY, JSON.stringify(arr));
+  renderPendingBadge();
+}
+
+function addPending(item) {
+  const arr = getPending();
+  arr.push(item);
+  setPending(arr);
+}
+
+function renderPendingBadge() {
+  const n = getPending().length;
+  const el = document.getElementById("pendingBadge");
+  if (!el) return;
+  if (n > 0) {
+    el.textContent = `⏳ ${n} temuan menunggu dikirim (offline)`;
+    el.classList.remove("hidden");
+  } else {
+    el.classList.add("hidden");
+  }
+}
+
+async function trySyncPending() {
+  const arr = getPending();
+  if (arr.length === 0) return;
+
+  const sisa = [];
+  for (const item of arr) {
+    try {
+      const data = { ...item.data };
+      if (item.fotoBase64) {
+        const up = await callApi("uploadFoto", { base64: item.fotoBase64, filename: `temuan-${item.ts}.jpg` });
+        data.fotoUrl = up.url;
+      }
+      if (item.fotoTindakanBase64) {
+        const up = await callApi("uploadFoto", { base64: item.fotoTindakanBase64, filename: `tindakan-${item.ts}.jpg` });
+        data.fotoTindakanUrl = up.url;
+      }
+      await callApi("addTemuan", { data });
+      kirimNotifTelegram(data);
+    } catch (e) {
+      sisa.push(item);
+    }
+  }
+  setPending(sisa);
+  if (sisa.length < arr.length) {
+    await refreshTemuan();
+  }
+}
+
+window.addEventListener("online", trySyncPending);
+
 // =====================================================================
 // PANTAU — app.js (versi Google Sheets + Apps Script)
 // =====================================================================
@@ -125,8 +188,10 @@ function enterApp(nama) {
   document.getElementById("userLabel").textContent = nama;
   document.getElementById("fDibuatOleh").value = nama;
   document.getElementById("fNik").value = s ? s.nik : "";
+  renderPendingBadge();
+  trySyncPending();
   refreshTemuan();
-  pollTimer = setInterval(refreshTemuan, POLL_INTERVAL_MS);
+  pollTimer = setInterval(() => { trySyncPending(); refreshTemuan(); }, POLL_INTERVAL_MS);
 }
 
 (function initAuth() {
@@ -232,8 +297,20 @@ document.getElementById("btnSimpanTemuan").addEventListener("click", async () =>
     await refreshTemuan();
     alert("Data tersimpan.");
   } catch (e) {
-    alert("Gagal menyimpan data: " + e.message);
-    console.error(e);
+    const isNetworkError = !navigator.onLine || /Failed to fetch|NetworkError|load failed/i.test(e.message);
+    if (isNetworkError && !editingId) {
+      addPending({
+        ts: Date.now(),
+        data,
+        fotoBase64,
+        fotoTindakanBase64
+      });
+      resetForm();
+      alert("Tidak ada koneksi internet. Temuan disimpan sementara di HP dan akan otomatis terkirim saat sinyal kembali.");
+    } else {
+      alert("Gagal menyimpan data: " + e.message);
+      console.error(e);
+    }
   } finally {
     toggleLoading(false);
   }
